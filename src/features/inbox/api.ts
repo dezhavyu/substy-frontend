@@ -7,12 +7,20 @@ export interface GetInboxPageParams {
   limit: number;
 }
 
+const notificationPayloadSchema = z
+  .object({
+    event_type: z.string().optional(),
+    message: z.string().optional()
+  })
+  .passthrough();
+
 const notificationsPageSchema = z
   .object({
     items: z.array(
       z.object({
         id: z.string(),
         topic_id: z.string(),
+        payload: notificationPayloadSchema.optional(),
         status: z.string(),
         created_at: z.string().datetime({ offset: true })
       })
@@ -24,6 +32,24 @@ const notificationsPageSchema = z
     items: value.items,
     nextCursor: value.next_cursor ?? value.nextCursor ?? null
   }));
+
+function notificationTitle(item: z.infer<typeof notificationsPageSchema>["items"][number]): string {
+  const eventType = item.payload?.event_type;
+  if (eventType === "subscription.subscribed") {
+    return "Subscribed";
+  }
+  if (eventType === "subscription.unsubscribed") {
+    return "Unsubscribed";
+  }
+  return `Notification ${item.status}`;
+}
+
+function notificationMessage(item: z.infer<typeof notificationsPageSchema>["items"][number]): string {
+  if (item.payload?.message) {
+    return item.payload.message;
+  }
+  return `Topic: ${item.topic_id}`;
+}
 
 export async function getInboxPage(params: GetInboxPageParams): Promise<InboxPage> {
   const searchParams = new URLSearchParams();
@@ -43,8 +69,8 @@ export async function getInboxPage(params: GetInboxPageParams): Promise<InboxPag
     items: page.items.map((item) => ({
       id: item.id,
       topic_name: item.topic_id,
-      title: `Notification ${item.status}`,
-      message: `Topic: ${item.topic_id}`,
+      title: notificationTitle(item),
+      message: notificationMessage(item),
       read: false,
       created_at: item.created_at
     })),
