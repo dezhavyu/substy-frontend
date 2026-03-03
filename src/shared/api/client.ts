@@ -34,10 +34,18 @@ function toAbsoluteUrl(path: string): string {
     try {
       const parsed = new URL(baseUrl);
       const currentHost = window.location.hostname;
+      const currentIsLoopback = loopbackHosts.has(currentHost);
 
       // Keep frontend/backend on the same loopback host to avoid cookie isolation
       // when the app is opened on 127.0.0.1 but BFF URL points to localhost (or vice versa).
       if (loopbackHosts.has(parsed.hostname) && loopbackHosts.has(currentHost) && parsed.hostname !== currentHost) {
+        parsed.hostname = currentHost;
+        baseUrl = parsed.toString().replace(/\/$/, "");
+      }
+
+      // Allow container-internal hostnames (e.g. bff-gateway) in env while still
+      // supporting browser access from localhost/127.0.0.1.
+      if (!loopbackHosts.has(parsed.hostname) && currentIsLoopback) {
         parsed.hostname = currentHost;
         baseUrl = parsed.toString().replace(/\/$/, "");
       }

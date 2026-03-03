@@ -8,7 +8,8 @@ function parsePositiveInteger(value: string | undefined, fallback: number): numb
   return fallback;
 }
 
-const rawBffBaseUrl = process.env.NEXT_PUBLIC_BFF_BASE_URL ?? "http://localhost:8070";
+const rawBffBaseUrl =
+  process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_BFF_BASE_URL ?? "http://localhost:8070";
 
 export const env = {
   bffBaseUrl: rawBffBaseUrl.replace(/\/$/, ""),

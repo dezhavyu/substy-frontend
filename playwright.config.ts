@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+const useExternalServer = process.env.PLAYWRIGHT_USE_EXTERNAL_SERVER === "true";
 
 export default defineConfig({
   testDir: "./src/tests/e2e",
@@ -11,12 +12,14 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry"
   },
-  webServer: {
-    command: "npm run dev",
-    url: baseURL,
-    reuseExistingServer: true,
-    timeout: 120000
-  },
+  webServer: useExternalServer
+    ? undefined
+    : {
+        command: "npm run dev",
+        url: baseURL,
+        reuseExistingServer: true,
+        timeout: 120000
+      },
   projects: [
     {
       name: "chromium",
